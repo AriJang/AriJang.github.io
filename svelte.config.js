@@ -3,10 +3,12 @@ import adapter from '@sveltejs/adapter-static';
 export default {
   kit: {
     adapter: adapter({
-      fallback: '200.html' // SPA 라우팅을 위한 fallback 설정
+      pages: 'build',
+      assets: 'build',
+      fallback: '200.html'
     }),
     paths: {
-      base: '' // base 경로를 비워둡니다.
+      base: process.env.NODE_ENV === 'production' ? '/arijang.github.io' : ''
     }
   }
 };
