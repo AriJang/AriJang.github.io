@@ -220,6 +220,64 @@
         currentMode = 'alternate'; // 번갈아 가며 놓기 모드로 전환
     }
 
+    // 기보를 JSON 형식으로 저장하는 함수
+    function saveKibo() {
+        // 사용자에게 파일 이름을 입력받음
+        let fileName = prompt("파일 이름을 입력하세요:", "kibo.json");
+
+        // 파일 이름이 없으면 기본값 설정
+        if (!fileName) {
+            fileName = "kibo.json";
+        }
+
+        // 기보 데이터를 JSON 형식으로 저장
+        const kibo = {
+            board: board,           // 바둑판 상태
+            history: history,       // 히스토리 (돌이 놓인 순서)
+            moveHistory: moveHistory, // 각 돌이 놓인 순서 기록
+            moveCount: moveCount    // 현재까지 놓은 돌의 수
+        };
+
+        // JSON 문자열로 변환
+        const kiboJSON = JSON.stringify(kibo);
+
+        // 파일 다운로드
+        const blob = new Blob([kiboJSON], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;  // 사용자 정의 파일 이름으로 저장
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // 기보를 불러오는 함수
+    function loadKibo(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const kibo = JSON.parse(e.target.result);
+
+            // 바둑판 상태 복원
+            board = kibo.board;
+            history = kibo.history;
+            moveHistory = kibo.moveHistory;
+            moveCount = kibo.moveCount;
+
+            // 바둑판에 돌을 다시 그려줌 (예: 화면 갱신을 위한 함수 호출 필요)
+            redrawBoard();
+        };
+
+        reader.readAsText(file);
+    }
+
+    // 바둑판을 다시 그리는 함수 (필요한 경우 구현)
+    function redrawBoard() {
+        // 바둑판 상태에 따라 돌들을 다시 렌더링하는 로직을 구현
+        // 바둑판의 상태를 기반으로 각 돌을 그려줌
+    }
+
 </script>
 
 <style>
@@ -290,7 +348,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 1.5vw; /* 숫자의 크기 */
+        font-size: 1.0vw; /* 숫자의 크기 */
         color: white;
         font-weight: bold;
     }
@@ -317,8 +375,11 @@
     .controls {
         display: flex;
         flex-direction: column;
-        align-items: flex-start; /* 버튼을 왼쪽 정렬 */
-        margin-left: 100px; /* 바둑판과 버튼 사이의 추가 간격 */
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px; /* 버튼 사이 간격 */
+        margin-left: 20px; /* 바둑판과 버튼들 사이 간격 */
+        height: 1200px; /* 바둑판과 동일한 높이 설정 */
     }
 
     .button {
@@ -359,6 +420,63 @@
         display: flex;            /* Flexbox를 사용 */
         justify-content: center;  /* 좌우 중앙 정렬 */
         align-items: center;      /* 상하 중앙 정렬 */
+    }
+
+    .kibo-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        margin-top: auto; /* 바둑판 하단에 맞추기 위해 자동으로 여백 추가 */
+        margin-bottom: 0; /* 하단 여백 제거 */
+    }
+
+    .kibo-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .kibo-button:hover {
+        background-color: #0056b3;
+    }
+
+    .kibo-button:active {
+        background-color: #004080;
+    }
+
+    .save {
+        background-color: #28a745;
+    }
+
+    .save:hover {
+        background-color: #218838;
+    }
+
+    .save:active {
+        background-color: #1e7e34;
+    }
+
+    .load {
+        background-color: #ffc107;
+    }
+
+    .load:hover {
+        background-color: #e0a800;
+    }
+
+    .load:active {
+        background-color: #c69500;
+    }
+
+    .file-input {
+        display: none; /* 숨기기 */
     }
 </style>
 
@@ -451,5 +569,14 @@
             on:click={resetBoard}
             style = "background-color: red;"
         >리셋</button>
+
+        <div class="kibo-container">
+            <button class="kibo-button save" on:click={saveKibo}>기보 저장</button>
+            
+            <label for="kibo-file" class="kibo-button load">기보 불러오기</label>
+            <input type="file" id="kibo-file" class="file-input" on:change={loadKibo} />
+        </div>
     </div>
+
+    
 </div>
