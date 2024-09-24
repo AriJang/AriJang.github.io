@@ -112,7 +112,6 @@
         ];
 
         while (stack.length > 0) {
-            // @ts-ignore
             const { x: currentX, y: currentY } = stack.pop();
             group.push({ x: currentX, y: currentY });
 
@@ -143,6 +142,7 @@
 
         for (let { x, y } of group) {
             for (let { dx, dy } of directions) {
+                //console.log("x=", x, " y=", y, " dx=", dx, " dy=", dy);
                 const newX = x + dx;
                 const newY = y + dy;
 
@@ -150,13 +150,13 @@
                 if (x === 1 && dx === -1) continue;
                 
                 // 맨 아래줄일 경우 아래쪽을 검사할 필요 없음
-                if (x === boardSize - 1 && dx === 1) continue;
+                if (x === boardSize - 2 && dx === 1) continue;
                 
                 // 맨 왼쪽줄일 경우 왼쪽을 검사할 필요 없음
                 if (y === 1 && dy === -1) continue;
                 
                 // 맨 오른쪽줄일 경우 오른쪽을 검사할 필요 없음
-                if (y === boardSize - 1 && dy === 1) continue;
+                if (y === boardSize - 2 && dy === 1) continue;
 
                 // 보드 경계를 벗어나거나 빈 공간이 있으면 그룹이 둘러싸이지 않음
                 if (newX <= 0 || newX >= boardSize || newY <= 0 || newY >= boardSize || board[newX][newY] === null) {
