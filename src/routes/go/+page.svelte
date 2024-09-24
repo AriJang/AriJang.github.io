@@ -32,7 +32,6 @@
     }
 
     // 돌을 놓는 함수
-    // @ts-ignore
     function placeStone(x, y) {
         if (board[x][y] === null) {
             // 현재 돌을 놓음
@@ -41,11 +40,16 @@
             moveCount++;
             moveHistory[x][y] = moveCount; // 돌의 순서 기록
 
-            // 히스토리에 돌의 위치와 돌 색상 저장
-            history.push({ x, y, stone: currentStone });
-
             // 상대방 돌이 둘러싸였는지 체크
-            checkCaptured(x, y);
+            const capturedStones = checkCaptured(x, y);
+
+            // 히스토리에 돌의 위치와 돌 색상, 사석 그룹 기록
+            history.push({ 
+                x, 
+                y, 
+                stone: currentStone, 
+                capturedStones 
+            });
 
             // 다음 차례로 돌 교체
             if (currentMode === 'alternate') {
@@ -61,12 +65,20 @@
     function undoMove(event) {
         event.preventDefault(); // 오른쪽 클릭 시 기본 메뉴 방지
         if (history.length > 0) {
-            // @ts-ignore
             const lastMove = history.pop(); // 마지막에 놓은 돌을 제거
-            const { x, y } = lastMove;
-            board[x][y] = null; // 바둑판에서 해당 돌 제거
+            const { x, y, capturedStones } = lastMove;
+
+            // console.log("undo lastMove=", lastMove);
+
+            // 바둑판에서 해당 돌 제거
+            board[x][y] = null; 
             moveHistory[x][y] = null; // 순서 정보도 제거
             moveCount--; // 돌 순서 감소
+
+            // 사석으로 제거된 돌 복원
+            for (let { x: capturedX, y: capturedY, stone } of capturedStones) {
+                board[capturedX][capturedY] = stone;
+            }
 
             // 마지막 돌의 색상으로 돌 차례를 되돌림
             currentStone = lastMove.stone;
@@ -83,6 +95,8 @@
             { dx: 0, dy: 1 }   // 오른쪽
         ];
 
+        const capturedStones = []; // 사석으로 제거된 돌들
+
         // 현재 돌의 상하좌우에 있는 상대방 돌을 탐색
         for (let { dx, dy } of directions) {
             const newX = x + dx;
@@ -92,10 +106,15 @@
             if (newX > 0 && newX < boardSize && newY > 0 && newY < boardSize && board[newX][newY] === opponent) {
                 const group = findGroup(newX, newY, opponent);
                 if (isSurrounded(group)) {
+                    capturedStones.push(...group); // 사석으로 제거된 그룹 기록
                     removeGroup(group); // 그룹이 포위되었으면 제거
                 }
             }
         }
+
+        // console.log("capturedStones=", capturedStones);
+
+        return capturedStones; // 사석으로 제거된 돌 그룹 반환
     }
 
     // 그룹을 찾는 함수 (재귀적으로 연결된 같은 색 돌을 찾음)
@@ -113,7 +132,8 @@
 
         while (stack.length > 0) {
             const { x: currentX, y: currentY } = stack.pop();
-            group.push({ x: currentX, y: currentY });
+            // 좌표와 해당 위치의 돌 색상 정보를 함께 저장
+            group.push({ x: currentX, y: currentY, stone: board[currentX][currentY] });
 
             for (let { dx, dy } of directions) {
                 const newX = currentX + dx;
