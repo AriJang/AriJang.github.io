@@ -1,0 +1,435 @@
+<script>
+    let currentMode = 'alternate'; // 기본 모드는 번갈아 가며 놓기
+    let currentStone = 'black'; // 첫 돌은 검정색
+    const boardSize = 21;
+    let board = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+
+    // 순서를 기록할 변수
+    let moveCount = 0;
+    let moveHistory = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+
+    // 모든 돌의 히스토리를 기록할 배열
+    let history = [];
+
+    // 숫자 표시 여부를 제어하는 변수
+    let showMoveNumbers = true;
+
+    const starPoints = [
+        { x: 4, y: 4 },
+        { x: 4, y: 10 },
+        { x: 4, y: 16 },
+        { x: 10, y: 4 },
+        { x: 10, y: 10 },
+        { x: 10, y: 16 },
+        { x: 16, y: 4 },
+        { x: 16, y: 10 },
+        { x: 16, y: 16 }
+    ];
+
+    // 숫자 표시 여부를 토글하는 함수
+    function toggleMoveNumbers() {
+        showMoveNumbers = !showMoveNumbers;
+    }
+
+    // 돌을 놓는 함수
+    // @ts-ignore
+    function placeStone(x, y) {
+        if (board[x][y] === null) {
+            // 현재 돌을 놓음
+            board[x][y] = currentStone;
+
+            moveCount++;
+            moveHistory[x][y] = moveCount; // 돌의 순서 기록
+
+            // 히스토리에 돌의 위치와 돌 색상 저장
+            history.push({ x, y, stone: currentStone });
+
+            // 상대방 돌이 둘러싸였는지 체크
+            checkCaptured(x, y);
+
+            // 다음 차례로 돌 교체
+            if (currentMode === 'alternate') {
+                currentStone = currentStone === 'black' ? 'white' : 'black';
+            }
+            
+        } else {
+            board[x][y] = null;
+        }
+    }
+
+    // 되돌리기 기능
+    function undoMove(event) {
+        event.preventDefault(); // 오른쪽 클릭 시 기본 메뉴 방지
+        if (history.length > 0) {
+            // @ts-ignore
+            const lastMove = history.pop(); // 마지막에 놓은 돌을 제거
+            const { x, y } = lastMove;
+            board[x][y] = null; // 바둑판에서 해당 돌 제거
+            moveHistory[x][y] = null; // 순서 정보도 제거
+            moveCount--; // 돌 순서 감소
+
+            // 마지막 돌의 색상으로 돌 차례를 되돌림
+            currentStone = lastMove.stone;
+        }
+    }
+
+    // 사석 확인 함수
+    function checkCaptured(x, y) {
+        const opponent = currentStone === 'black' ? 'white' : 'black'; // 상대방 돌 색상
+        const directions = [
+            { dx: -1, dy: 0 }, // 위쪽
+            { dx: 1, dy: 0 },  // 아래쪽
+            { dx: 0, dy: -1 }, // 왼쪽
+            { dx: 0, dy: 1 }   // 오른쪽
+        ];
+
+        // 현재 돌의 상하좌우에 있는 상대방 돌을 탐색
+        for (let { dx, dy } of directions) {
+            const newX = x + dx;
+            const newY = y + dy;
+
+            // 보드 경계 안에 있고 상대방 돌이 있을 경우 체크
+            if (newX > 0 && newX < boardSize && newY > 0 && newY < boardSize && board[newX][newY] === opponent) {
+                const group = findGroup(newX, newY, opponent);
+                if (isSurrounded(group)) {
+                    removeGroup(group); // 그룹이 포위되었으면 제거
+                }
+            }
+        }
+    }
+
+    // 그룹을 찾는 함수 (재귀적으로 연결된 같은 색 돌을 찾음)
+    function findGroup(x, y, stoneType, visited = new Set()) {
+        const group = [];
+        const stack = [{ x, y }];
+        visited.add(`${x},${y}`);
+
+        const directions = [
+            { dx: -1, dy: 0 }, // 위쪽
+            { dx: 1, dy: 0 },  // 아래쪽
+            { dx: 0, dy: -1 }, // 왼쪽
+            { dx: 0, dy: 1 }   // 오른쪽
+        ];
+
+        while (stack.length > 0) {
+            // @ts-ignore
+            const { x: currentX, y: currentY } = stack.pop();
+            group.push({ x: currentX, y: currentY });
+
+            for (let { dx, dy } of directions) {
+                const newX = currentX + dx;
+                const newY = currentY + dy;
+
+                // 같은 종류의 돌을 찾고, 재귀적으로 그룹에 추가
+                if (newX > 0 && newX < boardSize && newY > 0 && newY < boardSize &&
+                    board[newX][newY] === stoneType && !visited.has(`${newX},${newY}`)) {
+                    visited.add(`${newX},${newY}`);
+                    stack.push({ x: newX, y: newY });
+                }
+            }
+        }
+
+        return group;
+    }
+
+    // 그룹이 포위되었는지 확인하는 함수
+    function isSurrounded(group) {
+        const directions = [
+            { dx: -1, dy: 0 }, // 위쪽
+            { dx: 1, dy: 0 },  // 아래쪽
+            { dx: 0, dy: -1 }, // 왼쪽
+            { dx: 0, dy: 1 }   // 오른쪽
+        ];
+
+        for (let { x, y } of group) {
+            for (let { dx, dy } of directions) {
+                const newX = x + dx;
+                const newY = y + dy;
+
+                // 맨 위줄일 경우 위쪽을 검사할 필요 없음
+                if (x === 1 && dx === -1) continue;
+                
+                // 맨 아래줄일 경우 아래쪽을 검사할 필요 없음
+                if (x === boardSize - 1 && dx === 1) continue;
+                
+                // 맨 왼쪽줄일 경우 왼쪽을 검사할 필요 없음
+                if (y === 1 && dy === -1) continue;
+                
+                // 맨 오른쪽줄일 경우 오른쪽을 검사할 필요 없음
+                if (y === boardSize - 1 && dy === 1) continue;
+
+                // 보드 경계를 벗어나거나 빈 공간이 있으면 그룹이 둘러싸이지 않음
+                if (newX <= 0 || newX >= boardSize || newY <= 0 || newY >= boardSize || board[newX][newY] === null) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // 포위된 그룹의 돌을 제거하는 함수
+    function removeGroup(group) {
+        for (let { x, y } of group) {
+            board[x][y] = null; // 그룹의 돌을 제거
+        }
+    }
+
+    // 리셋 버튼 클릭 시 바둑판 초기화
+    function resetBoard() {
+        // @ts-ignore
+        board = Array(boardSize).fill().map(() => Array(boardSize).fill(null)); // 모든 셀을 null로 초기화
+        setAlternateMode
+        // @ts-ignore
+        moveHistory = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+        moveCount = 0;
+    }
+
+    // 버튼 클릭 시 상태 변경
+    function setWhiteMode() {
+        currentMode = 'white'; // 흰색 돌만 놓기 모드로 전환
+        currentStone = 'white';
+    }
+
+    function setBlackMode() {
+        currentMode = 'black'; // 검정 돌만 놓기 모드로 전환
+        currentStone = 'black';
+    }
+
+    function setAlternateMode() {
+        currentMode = 'alternate'; // 번갈아 가며 놓기 모드로 전환
+    }
+
+</script>
+
+<style>
+    .board-container {
+        display: flex;
+        flex-direction: row; /* 가로로 배치 */
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100vh; /* 화면 전체 높이를 사용하여 컨테이너 확장 */
+        margin: 0; /* 상단 여백을 없앰 */
+        background-color: #d3d3d3; /* 회색 배경색 설정 */
+    }
+
+    .board {
+        position: relative;
+        width: 1200px; /* 바둑판 너비 1200px로 확장 */
+        height: 1200px; /* 바둑판 높이 1200px로 확장 */
+        background-color: #f0d9b5;
+        border: 2px solid black;
+        display: grid;
+        grid-template-columns: repeat(19, 63px); /* 각 셀의 크기를 63px로 조정 */
+        grid-template-rows: repeat(19, 63px); /* 각 셀의 크기를 63px로 조정 */
+        gap: 0;
+    }
+
+
+    .line {
+        position: absolute;
+        background-color: black;
+    }
+
+    .horizontal {
+        height: 2px;
+        width: 100%;
+    }
+
+    .vertical {
+        width: 2px;
+        height: 100%;
+    }
+
+    .cell {
+        position: absolute;
+        width: 47px;
+        height: 47px;
+    }
+
+    .star-point {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background-color: black;
+        border-radius: 50%;
+        top: 53%;
+        left: 53%;
+        transform: translate(-50%, -50%);
+    }
+
+    .stone {
+        position: absolute;
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5vw; /* 숫자의 크기 */
+        color: white;
+        font-weight: bold;
+    }
+
+    .black {
+        background-color: black;
+        color: white; /* 흑돌 위 숫자는 흰색 */
+    }
+
+    .white {
+        background-color: white;
+        color: black; /* 백돌 위 숫자는 검정색 */
+    }
+
+    .move-number {
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+
+    /* 버튼 스타일 */
+    .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* 버튼을 왼쪽 정렬 */
+        margin-left: 100px; /* 바둑판과 버튼 사이의 추가 간격 */
+    }
+
+    .button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 4px solid transparent; /* 선택되었을 때만 테두리 */
+        margin-bottom: 30px;
+        cursor: pointer;
+    }
+
+    .selected {
+        border-color: blue; /* 선택된 버튼 테두리 색 */
+    }
+
+    .black-button {
+        background-color: black;
+    }
+
+    .white-button {
+        background-color: white;
+    }
+
+    .alternate-button {
+        background: linear-gradient(to bottom, white 50%, black 50%);
+        border-radius: 50%;
+        background-size: cover; /* 상하로 균등하게 채우기 */
+    }
+
+    .number-button {
+        background-color: rgb(11, 19, 184); 
+        color: white; 
+        border-radius: 5px; 
+        width: 100px; 
+        height: 50px; 
+        text-align: center; 
+        line-height: 30px;
+        display: flex;            /* Flexbox를 사용 */
+        justify-content: center;  /* 좌우 중앙 정렬 */
+        align-items: center;      /* 상하 중앙 정렬 */
+    }
+</style>
+
+<!-- Go board -->
+<div class="board-container"> 
+
+    <!-- Go board -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="board" on:contextmenu={undoMove}>
+        <!-- Draw horizontal lines -->
+        {#each Array(19) as _, index}
+            <div class="line horizontal" style="top: {index * (1200 / 18)}px"></div>
+        {/each}
+
+        <!-- Draw vertical lines -->
+        {#each Array(19) as _, index}
+            <div class="line vertical" style="left: {index * (1200 / 18)}px"></div>
+        {/each}
+
+        <!-- Place and remove stones and render star points -->
+        {#each board.slice(1, 20) as row, x}
+            {#each row.slice(1, 20) as cell, y}
+                <div 
+                    class="cell" 
+                    style="top: {x * (1200 / 18) - 25}px; left: {y * (1200 / 18) - 25}px;"
+                    on:click={() => placeStone(x + 1, y + 1)} 
+                    on:keydown={(e) => { if (e.key === 'Enter') placeStone(x + 1, y + 1); }}
+                    role="button" tabindex="0"
+                >                    
+                    <!-- Render star point if the coordinates match -->
+                    {#if starPoints.some(point => point.x === x + 1 && point.y === y + 1)}
+                        <div class="star-point"></div>
+                    {/if}
+
+                    <!-- Render stone if present -->
+                    {#if board[x + 1][y + 1] === 'black'}
+                        <div class="stone black"></div>
+                    {:else if board[x + 1][y + 1] === 'white'}
+                        <div class="stone white"></div>
+                    {/if}
+
+                    {#if board[x + 1][y + 1] === 'black' || board[x + 1][y + 1] === 'white'}
+                        <div class="stone {board[x + 1][y + 1]}">
+                            {#if showMoveNumbers}
+                                <span class="move-number">{moveHistory[x + 1][y + 1]}</span>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+            {/each}
+        {/each}
+    </div>
+
+     <!-- Control Buttons -->
+    <div class="controls">
+        <!-- 흰색 돌 버튼 -->
+        <button 
+            class="button white-button"
+            class:selected={currentMode === 'white'}
+            on:click={setWhiteMode}
+        ></button>
+
+        <!-- 검정색 돌 버튼 -->
+        <button 
+            class="button black-button"
+            class:selected={currentMode === 'black'}
+            on:click={setBlackMode}
+        ></button>
+
+        <!-- 번갈아 가며 두기 버튼 -->
+        <button 
+            class="button alternate-button"
+            class:selected={currentMode === 'alternate'}
+            on:click={setAlternateMode}
+        ></button>
+
+        <!-- 옵션 버튼 -->
+        <button class="button number-button"
+            on:click={toggleMoveNumbers}>            
+                {#if showMoveNumbers}
+                    순서숨기기
+                {:else}
+                    순서보이기
+                {/if}
+        </button>
+
+        <!-- 리셋 버튼 추가 -->
+        <button 
+            class="button number-button"
+            on:click={resetBoard}
+            style = "background-color: red;"
+        >리셋</button>
+    </div>
+</div>
