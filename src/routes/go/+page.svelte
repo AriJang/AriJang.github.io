@@ -197,12 +197,12 @@
 
     // 리셋 버튼 클릭 시 바둑판 초기화
     function resetBoard() {
-        // @ts-ignore
         board = Array(boardSize).fill().map(() => Array(boardSize).fill(null)); // 모든 셀을 null로 초기화
         setAlternateMode
-        // @ts-ignore
         moveHistory = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
         moveCount = 0;
+        history = [];
+        currentStone = 'black';
     }
 
     // 버튼 클릭 시 상태 변경
@@ -218,6 +218,7 @@
 
     function setAlternateMode() {
         currentMode = 'alternate'; // 번갈아 가며 놓기 모드로 전환
+        currentStone = 'black';
     }
 
     // 기보를 JSON 형식으로 저장하는 함수
