@@ -299,8 +299,8 @@
         background-color: #f0d9b5;
         border: 2px solid black;
         display: grid;
-        grid-template-columns: repeat(19, 63px); /* 각 셀의 크기를 63px로 조정 */
-        grid-template-rows: repeat(19, 63px); /* 각 셀의 크기를 63px로 조정 */
+        grid-template-columns: repeat(19, 1fr);
+        grid-template-rows: repeat(19, 1fr);
         gap: 0;
     }
 
@@ -348,7 +348,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 1.0vw; /* 숫자의 크기 */
+        font-size: 1.2rem;
         color: white;
         font-weight: bold;
     }
@@ -425,7 +425,6 @@
     .kibo-container {
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
         align-items: center;
         gap: 10px;
         margin-top: auto; /* 바둑판 하단에 맞추기 위해 자동으로 여백 추가 */
@@ -433,15 +432,20 @@
     }
 
     .kibo-button {
+        width: 150px; /* 고정된 폭 */
+        margin-left: 20px;
+        margin-top: 20px;
         background-color: #007bff;
         color: white;
         border: none;
         border-radius: 8px;
-        padding: 10px 20px;
+        padding: 10px 0; /* 패딩을 수직으로만 적용하여 텍스트 길이 무관하게 동일한 크기 */
         font-size: 16px;
         cursor: pointer;
         transition: background-color 0.3s ease;
+        text-align: center;
     }
+
 
     .kibo-button:hover {
         background-color: #0056b3;
@@ -465,6 +469,7 @@
 
     .load {
         background-color: #ffc107;
+        color: black;
     }
 
     .load:hover {
