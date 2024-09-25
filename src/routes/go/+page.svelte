@@ -1,4 +1,6 @@
 <script>
+    import { onMount } from 'svelte'; 
+ 
     let currentMode = 'alternate'; // 기본 모드는 번갈아 가며 놓기
     let currentStone = 'black'; // 첫 돌은 검정색
     const boardSize = 21;
@@ -13,6 +15,8 @@
 
     // 숫자 표시 여부를 제어하는 변수
     let showMoveNumbers = true;
+
+    let kiboFiles = [];
 
     const starPoints = [
         { x: 4, y: 4 },
@@ -253,7 +257,7 @@
     }
 
     // 기보를 불러오는 함수
-    function loadKibo(event) {
+    function loadKiboFromLocal(event) {
         const file = event.target.files[0];
         const reader = new FileReader();
 
@@ -266,7 +270,6 @@
             moveHistory = kibo.moveHistory;
             moveCount = kibo.moveCount;
 
-            // 바둑판에 돌을 다시 그려줌 (예: 화면 갱신을 위한 함수 호출 필요)
             redrawBoard();
         };
 
@@ -275,8 +278,61 @@
 
     // 바둑판을 다시 그리는 함수 (필요한 경우 구현)
     function redrawBoard() {
-        // 바둑판 상태에 따라 돌들을 다시 렌더링하는 로직을 구현
-        // 바둑판의 상태를 기반으로 각 돌을 그려줌
+    }
+
+    // JSON 파일 목록을 불러오는 함수
+    async function fetchKiboFilesFromBuild() {
+        try {
+            // 정적 자산 경로에서 JSON 파일 목록을 가져옴
+            const response = await fetch('/kibo/files.json'); // files.json에 기보 파일 목록 작성
+            kiboFiles = await response.json();
+        } catch (error) {
+            console.error('Error fetching kibo files:', error);
+        }
+    }
+
+    async function fetchKiboFilesOnRuntime() {
+        try {
+                const response = await fetch('/api/kibo');
+                kiboFiles = await response.json(); // 파일 목록 저장
+            } catch (error) {
+                console.error('기보 파일 목록을 불러오는 중 오류 발생:', error);
+            }
+    }
+
+    // 페이지가 로드될 때 API를 호출하여 파일 목록을 가져옴
+    onMount(async () => {
+        console.log('import.meta.env.DEV = ' , import.meta.env.DEV);
+        if (import.meta.env.DEV) { // 동적 빌드일 때만 API 호출
+            fetchKiboFilesOnRuntime();
+        } else { // 정적 빌드
+            fetchKiboFilesFromBuild();
+        }
+        console.log("onMount kiboFiles = ", kiboFiles);
+    });
+
+    // 기보 파일 선택 후 불러오기
+    async function loadKiboFromAssets(event) {
+        const filePath = event.target.value;
+        if (filePath) {
+            try {
+                const response = await fetch(`/kibo/${filePath}`);
+                const data = await response.json();
+                applyKiboData(data);
+            } catch (error) {
+                console.error("Error loading kibo file:", error);
+            }
+        }
+    }
+
+    function applyKiboData(kibo) {
+        // 바둑판 상태 복원
+        board = kibo.board;
+        history = kibo.history;
+        moveHistory = kibo.moveHistory;
+        moveCount = kibo.moveCount;
+
+        redrawBoard(); // 바둑판 다시 그리기
     }
 
 </script>
@@ -579,8 +635,17 @@
         <div class="kibo-container">
             <button class="kibo-button save" on:click={saveKibo}>기보 저장</button>
             
-            <label for="kibo-file" class="kibo-button load">기보 불러오기</label>
-            <input type="file" id="kibo-file" class="file-input" on:change={loadKibo} />
+            <!-- 기보 불러오기 버튼 -->
+            <label for="kibo-file" class="kibo-button load">기보 불러오기 (로컬)</label>
+            <input type="file" id="kibo-file" class="file-input" on:change={loadKiboFromLocal} />
+
+            <!-- 동적으로 JSON 파일 목록을 불러오는 드롭다운 -->
+            <select on:change={loadKiboFromAssets} class="kibo-button load">
+                <option value="">기보 선택 (assets)</option>
+                {#each kiboFiles as file}
+                    <option value={file}>{file}</option>
+                {/each}
+            </select>
         </div>
     </div>
 
