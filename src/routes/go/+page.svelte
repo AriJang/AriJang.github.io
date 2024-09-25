@@ -6,12 +6,13 @@
     const boardSize = 21;
     let board = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
 
-    // 순서를 기록할 변수
-    let moveCount = 0;
-    let moveHistory = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+    let moveHistoryStack = Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => []));  // 각 자리에 스택으로 순서 기록
+    let gMoveCount = 0;       // 현재 돌 순서
 
     // 모든 돌의 히스토리를 기록할 배열
     let history = [];
+    // 되돌린 수를 임시로 저장하는 스택
+    let redoStack = [];
 
     // 숫자 표시 여부를 제어하는 변수
     let showMoveNumbers = true;
@@ -41,8 +42,9 @@
             // 현재 돌을 놓음
             board[x][y] = currentStone;
 
-            moveCount++;
-            moveHistory[x][y] = moveCount; // 돌의 순서 기록
+            gMoveCount++;
+            // 해당 자리에 스택에 순서 기록
+            moveHistoryStack[x][y].push(gMoveCount); 
 
             // 상대방 돌이 둘러싸였는지 체크
             const capturedStones = checkCaptured(x, y);
@@ -52,8 +54,12 @@
                 x, 
                 y, 
                 stone: currentStone, 
-                capturedStones 
+                capturedStones,
+                moveCount: gMoveCount
             });
+
+            // 돌을 놓은 이후에는 앞으로 가기 스택을 비움
+            redoStack = [];
 
             // 다음 차례로 돌 교체
             if (currentMode === 'alternate') {
@@ -69,23 +75,50 @@
     function undoMove(event) {
         event.preventDefault(); // 오른쪽 클릭 시 기본 메뉴 방지
         if (history.length > 0) {
-            const lastMove = history.pop(); // 마지막에 놓은 돌을 제거
+            const lastMove = history.pop(); // 마지막 수를 제거
+            redoStack.push(lastMove);  // 되돌린 수를 redoStack에 저장
             const { x, y, capturedStones } = lastMove;
+            board[x][y] = null;  // 돌을 제거
 
-            // console.log("undo lastMove=", lastMove);
-
-            // 바둑판에서 해당 돌 제거
-            board[x][y] = null; 
-            moveHistory[x][y] = null; // 순서 정보도 제거
-            moveCount--; // 돌 순서 감소
+            // 스택에서 마지막 순서도 제거
+            moveHistoryStack[x][y].pop();
 
             // 사석으로 제거된 돌 복원
             for (let { x: capturedX, y: capturedY, stone } of capturedStones) {
                 board[capturedX][capturedY] = stone;
             }
-
-            // 마지막 돌의 색상으로 돌 차례를 되돌림
+            
+            // 차례를 되돌림
             currentStone = lastMove.stone;
+            gMoveCount--;
+        }
+    }
+
+    // 앞으로 가기 함수 (되돌린 수 복원)
+    function redoMove() {
+        if (redoStack.length > 0) {
+            const nextMove = redoStack.pop();  // 되돌린 수를 다시 가져옴
+            const { x, y, stone, moveCount } = nextMove;
+            board[x][y] = stone;  // 돌을 복원
+
+            // 해당 자리에 스택에 순서 복원            
+            moveHistoryStack[x][y].push(moveCount);
+            gMoveCount++;
+
+            // 상대방 돌이 둘러싸였는지 체크
+            const capturedStones = checkCaptured(x, y);
+
+            // 히스토리에 돌의 위치와 돌 색상, 사석 그룹 기록
+            history.push({ 
+                x, 
+                y, 
+                stone: currentStone, 
+                capturedStones,
+                moveCount
+            });
+
+            // 차례를 다시 진행
+            currentStone = stone === 'black' ? 'white' : 'black';
         }
     }
 
@@ -203,9 +236,10 @@
     function resetBoard() {
         board = Array(boardSize).fill().map(() => Array(boardSize).fill(null)); // 모든 셀을 null로 초기화
         setAlternateMode
-        moveHistory = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
-        moveCount = 0;
+        moveHistoryStack = Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => []));
+        gMoveCount = 0;
         history = [];
+        redoStack = [];
         currentStone = 'black';
     }
 
@@ -237,10 +271,10 @@
 
         // 기보 데이터를 JSON 형식으로 저장
         const kibo = {
-            board: board,           // 바둑판 상태
-            history: history,       // 히스토리 (돌이 놓인 순서)
-            moveHistory: moveHistory, // 각 돌이 놓인 순서 기록
-            moveCount: moveCount    // 현재까지 놓은 돌의 수
+            board: board,                 // 바둑판 상태
+            history: history,             // 히스토리 (돌이 놓인 순서)
+            moveHistoryStack: moveHistoryStack,  // 각 자리의 스택 기록
+            moveCount: gMoveCount          // 현재까지 놓은 돌의 수
         };
 
         // JSON 문자열로 변환
@@ -259,17 +293,26 @@
     // 기보를 불러오는 함수
     function loadKiboFromLocal(event) {
         const file = event.target.files[0];
+        if (!file) return;
+
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            const kibo = JSON.parse(e.target.result);
+            const kiboData = JSON.parse(e.target.result);
 
             // 바둑판 상태 복원
-            board = kibo.board;
-            history = kibo.history;
-            moveHistory = kibo.moveHistory;
-            moveCount = kibo.moveCount;
+            board = kiboData.board || [];
 
+            // 히스토리 복원
+            history = kiboData.history || [];
+
+            // moveHistoryStack 복원
+            moveHistoryStack = kiboData.moveHistoryStack || Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => []));
+
+            // 돌 순서 복원
+            gMoveCount = kiboData.moveCount || 0;
+
+            // 바둑판을 다시 그리는 함수 호출 (필요한 경우)
             redrawBoard();
         };
 
@@ -330,7 +373,7 @@
         board = kibo.board;
         history = kibo.history;
         moveHistory = kibo.moveHistory;
-        moveCount = kibo.moveCount;
+        gMoveCount = kibo.moveCount;
 
         redrawBoard(); // 바둑판 다시 그리기
     }
@@ -479,6 +522,30 @@
         align-items: center;      /* 상하 중앙 정렬 */
     }
 
+    .icon-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .icon-button:hover {
+        background-color: #0056b3;
+    }
+
+    .icon-button:active {
+        background-color: #004080;
+    }
+
     .kibo-container {
         display: flex;
         flex-direction: column;
@@ -583,7 +650,12 @@
                     {#if board[x + 1][y + 1] === 'black' || board[x + 1][y + 1] === 'white'}
                         <div class="stone {board[x + 1][y + 1]}">
                             {#if showMoveNumbers}
-                                <span class="move-number">{moveHistory[x + 1][y + 1]}</span>
+                                <!-- 스택에서 가장 최근의 순서를 표시 -->
+                                {#if moveHistoryStack[x + 1][y + 1].length > 0}
+                                    <span class="move-number">
+                                        {moveHistoryStack[x + 1][y + 1][moveHistoryStack[x + 1][y + 1].length - 1]}
+                                    </span>
+                                {/if}
                             {/if}
                         </div>
                     {/if}
@@ -631,6 +703,16 @@
             on:click={resetBoard}
             style = "background-color: red;"
         >리셋</button>
+
+        <!-- Backward 버튼 (되돌리기) -->
+        <button class="icon-button" on:click={undoMove}>
+            &lt;
+        </button>
+
+        <!-- Forward 버튼 (앞으로 가기) -->
+        <button class="icon-button" on:click={redoMove}>
+            &gt;
+        </button>
 
         <div class="kibo-container">
             <button class="kibo-button save" on:click={saveKibo}>기보 저장</button>
