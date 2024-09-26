@@ -276,8 +276,8 @@ export function goToEnd() {
 
 // 바둑판 리셋 함수
 export function resetBoard() {
-    board.set(Array(boardSize).fill().map(() => Array(boardSize).fill(null)));
-    moveHistoryStack.set(Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => [])));
+    board.set(initialBoard);
+    moveHistoryStack.set(initialMoveHistoryStack);
     gMoveCount.set(0);
     history.set([]);
     redoStack.set([]);
@@ -358,7 +358,12 @@ function applyKiboData(kibo) {
     moveHistoryStack.set(kibo.moveHistoryStack || initialMoveHistoryStack);
     gMoveCount.set(kibo.moveCount || 0);
 
-    redrawBoard();
+    restoreFromKiboData();
+}
+
+function restoreFromKiboData() {
+    goToStart();
+    goToEnd();
 }
 
 // 기보 파일을 정적 자산에서 불러오는 함수
