@@ -57,64 +57,6 @@ export function placeStone(x, y) {
     });
 }
 
-// 되돌리기
-export function undoMove() {
-    if (get(history).length > 0) {
-        const lastMove = get(history).pop();  // 마지막 수를 히스토리에서 제거
-        redoStack.update(r => [...r, lastMove]);  // 되돌린 수를 redoStack에 저장
-        const { x, y, capturedStones } = lastMove;
-
-        board.update(b => {
-            b[x][y] = null;  // 마지막 수를 바둑판에서 제거
-
-            // 스택에서 마지막 순서도 제거
-            moveHistoryStack.update(mhs => {
-                mhs[x][y].pop();
-                return mhs;
-            });
-
-            // 포위된 돌 복원
-            capturedStones.forEach(({ x: capturedX, y: capturedY, stone }) => {
-                b[capturedX][capturedY] = stone;
-            });
-
-            return b;
-        });
-
-        // 차례를 되돌림
-        currentStone.set(lastMove.stone);
-        gMoveCount.update(n => n - 1);
-    }
-}
-
-// 앞으로 가기(되돌린 수 복원)
-export function redoMove() {
-    if (get(redoStack).length > 0) {
-        const nextMove = get(redoStack).pop();  // 되돌린 수를 다시 가져옴
-        const { x, y, stone, moveCount } = nextMove;
-
-        board.update(b => {
-            b[x][y] = stone;  // 돌을 복원
-
-            // 해당 자리에 스택에 순서 복원
-            moveHistoryStack.update(mhs => {
-                mhs[x][y].push(moveCount);
-                return mhs;
-            });
-
-            const capturedStones = checkCaptured(x, y, b);  // 포위된 돌 확인
-
-            history.update(h => [...h, { x, y, stone, capturedStones, moveCount }]); // 히스토리 업데이트
-
-            return b;
-        });
-
-        // 차례를 교체
-        currentStone.set(stone === 'black' ? 'white' : 'black');
-        gMoveCount.update(n => n + 1);
-    }
-}
-
 // 포위된 돌(사석)이 있는지 확인하는 함수
 function checkCaptured(x, y, board) {
     const opponent = get(currentStone) === 'black' ? 'white' : 'black';  // 상대방 돌 색상
@@ -218,6 +160,97 @@ function removeGroup(group, board) {
     group.forEach(({ x, y }) => {
         board[x][y] = null;  // 돌을 제거
     });
+}
+
+// 되돌리기
+export function undoMove() {
+    if (get(history).length > 0) {
+        const lastMove = get(history).pop();  // 마지막 수를 히스토리에서 제거
+        redoStack.update(r => [...r, lastMove]);  // 되돌린 수를 redoStack에 저장
+        const { x, y, capturedStones } = lastMove;
+
+        board.update(b => {
+            b[x][y] = null;  // 마지막 수를 바둑판에서 제거
+
+            // 스택에서 마지막 순서도 제거
+            moveHistoryStack.update(mhs => {
+                mhs[x][y].pop();
+                return mhs;
+            });
+
+            // 포위된 돌 복원
+            capturedStones.forEach(({ x: capturedX, y: capturedY, stone }) => {
+                b[capturedX][capturedY] = stone;
+            });
+
+            return b;
+        });
+
+        // 차례를 되돌림
+        currentStone.set(lastMove.stone);
+        gMoveCount.update(n => n - 1);
+    }
+}
+
+// 앞으로 가기(되돌린 수 복원)
+export function redoMove() {
+    if (get(redoStack).length > 0) {
+        const nextMove = get(redoStack).pop();  // 되돌린 수를 다시 가져옴
+        const { x, y, stone, moveCount } = nextMove;
+
+        board.update(b => {
+            b[x][y] = stone;  // 돌을 복원
+
+            // 해당 자리에 스택에 순서 복원
+            moveHistoryStack.update(mhs => {
+                mhs[x][y].push(moveCount);
+                return mhs;
+            });
+
+            const capturedStones = checkCaptured(x, y, b);  // 포위된 돌 확인
+
+            history.update(h => [...h, { x, y, stone, capturedStones, moveCount }]); // 히스토리 업데이트
+
+            return b;
+        });
+
+        // 차례를 교체
+        currentStone.set(stone === 'black' ? 'white' : 'black');
+        gMoveCount.update(n => n + 1);
+    }
+}
+
+// 바둑판을 처음 상태로 되돌리는 함수
+export function goToStart() {
+    const currentHistory = get(history);
+    redoStack.update(r => [...currentHistory.reverse(), ...r]); // 현재 히스토리를 거꾸로 추가
+    board.set(Array(boardSize).fill().map(() => Array(boardSize).fill(null))); // 바둑판을 초기화
+    moveHistoryStack.set(Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => [])));
+    gMoveCount.set(0);
+    history.set([]); // 히스토리를 비움
+}
+
+// 5수 뒤로 가는 함수
+export function goBackFiveMoves() {
+    let steps = Math.min(5, get(history).length);  // 최대 5수 또는 남아있는 수만큼만
+    for (let i = 0; i < steps; i++) {
+        undoMove();  // 기존 undoMove 함수를 호출하여 한 수씩 되돌림
+    }
+}
+
+// 5수 앞으로 가는 함수
+export function goForwardFiveMoves() {
+    let steps = Math.min(5, get(redoStack).length);  // 최대 5수 또는 남아있는 redoStack만큼만
+    for (let i = 0; i < steps; i++) {
+        redoMove();  // 기존 redoMove 함수를 호출하여 한 수씩 진행
+    }
+}
+
+// 마지막 수로 이동하는 함수
+export function goToEnd() {
+    while (get(redoStack).length > 0) {
+        redoMove();  // redoStack이 빌 때까지 앞으로 이동
+    }
 }
 
 

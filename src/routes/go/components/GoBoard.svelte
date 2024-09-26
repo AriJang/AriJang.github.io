@@ -1,6 +1,6 @@
 <script>
   import { board, moveHistoryStack, showMoveNumbers, placeStone, undoMove } from '../stores/goStore';
-  export let starPoints;
+  import { starPoints } from '../constants';
 
   function handleUndo(event) {
     event.preventDefault(); // 우클릭 시 기본 메뉴 방지

@@ -1,7 +1,7 @@
 <script>
     import GoBoard from './components/GoBoard.svelte';
+    import OptionButtons from './components/OptionButtons.svelte';
     import ControlButtons from './components/ControlButtons.svelte';
-    import { starPoints } from './constants';
     import { onMount } from 'svelte';
     import { fetchKiboFilesOnRuntime, fetchKiboFilesFromBuild} from './stores/goStore';
 
@@ -16,30 +16,55 @@
 
 </script>
   
-  <div class="container">
-    <div class="board-container">
-      <GoBoard {starPoints} />
-      <ControlButtons />
-    </div>
-  </div>
-  
-  <style>
+<style>
     .container {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start; /* 컨트롤 버튼이 상단과 맞도록 설정 */
-      height: 100vh;
-      background-color: #d3d3d3; /* 배경색을 약간 회색으로 설정 */
-    }
-  
-    .board-container {
         display: flex;
-        flex-direction: row; /* 가로로 배치 */
+        flex-direction: row;
         justify-content: center;
         align-items: center;
-        width: 100%;
-        height: 100vh; /* 화면 전체 높이를 사용하여 컨테이너 확장 */
-        margin: 0; /* 상단 여백을 없앰 */
-        background-color: #d3d3d3; /* 회색 배경색 설정 */
+        height: 100vh;
+        background-color: #f0f0f0;
+    }
+
+    .board-side-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .board-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 0 0 800px;
+        margin-right: 20px;
+    }
+
+    .media-buttons-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+        width: 100%; 
     }
 </style>
+
+<div class="container">
+    <!-- 바둑판과 바둑판 아래의 버튼들을 묶은 컨테이너 -->
+    <div class="board-side-container">
+      <!-- 바둑판 컴포넌트 -->
+      <div class="board-container">
+        <GoBoard />
+      </div>
+  
+      <!-- 바둑판 아래의 컨트롤 버튼들 -->
+      <div class="media-buttons-container">
+        <ControlButtons />
+      </div>
+    </div>
+  
+    <!-- 바둑판 오른쪽에 위치할 옵션 버튼 그룹 -->
+    <OptionButtons />
+</div>
