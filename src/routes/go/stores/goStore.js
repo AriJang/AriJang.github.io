@@ -18,6 +18,24 @@ export const kiboFiles = writable([]);
 
 /** 착수 관련 로직 */
 
+function redrawBoard() {
+    const currentHistory = get(history);
+    // 히스토리 데이터를 기반으로 바둑판을 다시 설정
+    board.update(b => {
+        // 보드 초기화
+        for (let x = 0; x < boardSize; x++) {
+            for (let y = 0; y < boardSize; y++) {
+                b[x][y] = null;
+            }
+        }
+        // 히스토리에서 돌을 하나씩 복원
+        currentHistory.forEach(({ x, y, stone }) => {
+            b[x][y] = stone;
+        });
+        return b;
+    });
+}
+
 // 착수 함수
 export function placeStone(x, y) {
     board.update(b => {
@@ -166,7 +184,7 @@ function removeGroup(group, board) {
 export function undoMove() {
     if (get(history).length > 0) {
         const lastMove = get(history).pop();  // 마지막 수를 히스토리에서 제거
-        redoStack.update(r => [...r, lastMove]);  // 되돌린 수를 redoStack에 저장
+        redoStack.update(r => [lastMove, ...r]); // redoStack에 맨 앞에 추가
         const { x, y, capturedStones } = lastMove;
 
         board.update(b => {
@@ -195,7 +213,7 @@ export function undoMove() {
 // 앞으로 가기(되돌린 수 복원)
 export function redoMove() {
     if (get(redoStack).length > 0) {
-        const nextMove = get(redoStack).pop();  // 되돌린 수를 다시 가져옴
+        const nextMove = get(redoStack).shift();  // redoStack의 첫 번째 수를 가져옴
         const { x, y, stone, moveCount } = nextMove;
 
         board.update(b => {
@@ -223,7 +241,7 @@ export function redoMove() {
 // 바둑판을 처음 상태로 되돌리는 함수
 export function goToStart() {
     const currentHistory = get(history);
-    redoStack.update(r => [...currentHistory.reverse(), ...r]); // 현재 히스토리를 거꾸로 추가
+    redoStack.update(r => [...currentHistory,...r]);
     board.set(Array(boardSize).fill().map(() => Array(boardSize).fill(null))); // 바둑판을 초기화
     moveHistoryStack.set(Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => [])));
     gMoveCount.set(0);
@@ -318,6 +336,7 @@ export function saveKibo() {
 // 기보를 불러오는 함수 (로컬에서 파일 선택 후)
 export function loadKiboFromLocal(event) {
     const file = event.target.files[0];
+    console.log('loadKiboFromLocal', file);
     if (!file) return;
 
     const reader = new FileReader();
@@ -326,14 +345,20 @@ export function loadKiboFromLocal(event) {
         applyKiboData(kiboData);
     };
     reader.readAsText(file);
+
+    // 동일한 파일을 다시 선택할 수 있도록 input 값을 초기화
+    event.target.value = '';  // <--- 여기서 값을 초기화
 }
 
 // 기보 데이터를 바둑판에 적용하는 함수
 function applyKiboData(kibo) {
+    resetBoard();
     board.set(kibo.board || initialBoard);
     history.set(kibo.history || []);
     moveHistoryStack.set(kibo.moveHistoryStack || initialMoveHistoryStack);
     gMoveCount.set(kibo.moveCount || 0);
+
+    redrawBoard();
 }
 
 // 기보 파일을 정적 자산에서 불러오는 함수
