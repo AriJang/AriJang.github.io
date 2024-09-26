@@ -7,22 +7,20 @@ const initialMoveHistoryStack = Array(boardSize).fill().map(() => Array(boardSiz
 
 // 스토어 생성
 export const board = writable(initialBoard);
-export const currentMode = writable('alternate');  // 번갈아 가며 놓기 모드
-export const currentStone = writable('black');  // 첫 돌은 검정색
+export const currentMode = writable('alternate');
+export const currentStone = writable('black'); 
 export const moveHistoryStack = writable(initialMoveHistoryStack);
-export const gMoveCount = writable(0);  // 현재 돌 순서
-export const history = writable([]);  // 모든 돌의 히스토리를 기록할 배열
-export const redoStack = writable([]);  // 되돌린 수를 임시로 저장하는 스택
-export const showMoveNumbers = writable(true);  // 숫자 표시 여부
-export const kiboFiles = writable([]);  // 기보 파일 목록
+export const gMoveCount = writable(0); 
+export const history = writable([]); 
+export const redoStack = writable([]); 
+export const showMoveNumbers = writable(true);
+export const kiboFiles = writable([]);
 
 /** 착수 관련 로직 */
 
 // 착수 함수
 export function placeStone(x, y) {
-    console.log('playStone x=',x,' y=',y);
     board.update(b => {
-        console.log('b[x][y] = ',b[x][y]);
         if (b[x][y] === null) {
             // 현재 돌을 놓음
             b[x][y] = get(currentStone);
@@ -35,9 +33,9 @@ export function placeStone(x, y) {
                 return mhs;
             });
             
-            const capturedStones = checkCaptured(x, y, b);  // 포위된 돌이 있는지 체크
+            const capturedStones = checkCaptured(x, y, b);  // 사석 체크
 
-            // 히스토리에 돌의 위치, 색상, 포위된 돌 기록
+            // 히스토리에 돌의 위치, 색상, 사석 기록
             history.update(h => [...h, { x, y, stone: get(currentStone), capturedStones, moveCount: get(gMoveCount) }]);
 
             // 앞으로 가기 스택을 비움
@@ -59,15 +57,15 @@ export function placeStone(x, y) {
     });
 }
 
-// 되돌리기 기능
+// 되돌리기
 export function undoMove() {
     if (get(history).length > 0) {
-        const lastMove = get(history).pop();  // 마지막 수를 제거
+        const lastMove = get(history).pop();  // 마지막 수를 히스토리에서 제거
         redoStack.update(r => [...r, lastMove]);  // 되돌린 수를 redoStack에 저장
         const { x, y, capturedStones } = lastMove;
 
         board.update(b => {
-            b[x][y] = null;  // 돌을 제거
+            b[x][y] = null;  // 마지막 수를 바둑판에서 제거
 
             // 스택에서 마지막 순서도 제거
             moveHistoryStack.update(mhs => {
@@ -89,7 +87,7 @@ export function undoMove() {
     }
 }
 
-// 앞으로 가기 기능 (되돌린 수 복원)
+// 앞으로 가기(되돌린 수 복원)
 export function redoMove() {
     if (get(redoStack).length > 0) {
         const nextMove = get(redoStack).pop();  // 되돌린 수를 다시 가져옴
@@ -106,7 +104,7 @@ export function redoMove() {
 
             const capturedStones = checkCaptured(x, y, b);  // 포위된 돌 확인
 
-            history.update(h => [...h, { x, y, stone, capturedStones, moveCount }]);
+            history.update(h => [...h, { x, y, stone, capturedStones, moveCount }]); // 히스토리 업데이트
 
             return b;
         });
@@ -117,7 +115,7 @@ export function redoMove() {
     }
 }
 
-// 포위된 돌이 있는지 확인하는 함수
+// 포위된 돌(사석)이 있는지 확인하는 함수
 function checkCaptured(x, y, board) {
     const opponent = get(currentStone) === 'black' ? 'white' : 'black';  // 상대방 돌 색상
     const directions = [
@@ -285,7 +283,8 @@ export function saveKibo() {
 }
 
 // 기보를 불러오는 함수 (로컬에서 파일 선택 후)
-export function loadKiboFromLocal(file) {
+export function loadKiboFromLocal(event) {
+    const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
@@ -324,8 +323,9 @@ export async function fetchKiboFilesOnRuntime() {
     }
 }
 
-// 기보를 정적 자산에서 불러오는 함수 (사용자가 드롭다운에서 선택한 기보를 불러옴)
-export async function loadKiboFromAssets(filePath) {
+export async function loadKiboFromAssets(event) {
+    const filePath = event.target.value;
+    console.log('loadKiboFromAssets file=', filePath);
     if (filePath) {
         try {
             const response = await fetch(`/kibo/${filePath}`);

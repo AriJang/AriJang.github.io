@@ -2,12 +2,19 @@
     import GoBoard from './components/GoBoard.svelte';
     import ControlButtons from './components/ControlButtons.svelte';
     import { starPoints } from './constants';
-    import { onMount } from 'svelte'; 
-  
-    import { fetchKiboFilesOnRuntime } from './stores/goStore';    
-  
-    
-  </script>
+    import { onMount } from 'svelte';
+    import { fetchKiboFilesOnRuntime, fetchKiboFilesFromBuild} from './stores/goStore';
+
+    onMount(async () => {
+        console.log('import.meta.env.DEV = ' , import.meta.env.DEV);
+        if (import.meta.env.DEV) { // 동적 빌드일 때만 API 호출
+            fetchKiboFilesOnRuntime();
+        } else { // 정적 빌드
+            fetchKiboFilesFromBuild();
+        }       
+    });
+
+</script>
   
   <div class="container">
     <div class="board-container">

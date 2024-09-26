@@ -1,11 +1,10 @@
-
 <script>
   import { board, moveHistoryStack, showMoveNumbers, placeStone, undoMove } from '../stores/goStore';
   export let starPoints;
 
   function handleUndo(event) {
     event.preventDefault(); // 우클릭 시 기본 메뉴 방지
-    undoMove(); // 실제 되돌리기 로직 호출
+    undoMove();
   }
 </script>
 
@@ -24,10 +23,7 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="cell" 
                  style="top: {x * (1200 / 18) - 25}px; left: {y * (1200 / 18) - 25}px;" 
-                 on:click={() => {
-                    console.log(`Clicked at position: (${x + 1}, ${y + 1})`); // 클릭 위치를 로그로 출력
-                    placeStone(x + 1, y + 1); // 기존의 돌 놓기 함수
-                }}
+                 on:click={() => {placeStone(x + 1, y + 1);}}
                  on:keydown={(e) => { if (e.key === 'Enter') placeStone(x + 1, y + 1); }}
                  role="button" tabindex="0">
                 {#if starPoints.some(point => point.x === x + 1 && point.y === y + 1)}
@@ -62,8 +58,8 @@
 <style>
     .board {
         position: relative;
-        width: 1200px; /* 바둑판 너비 1200px로 확장 */
-        height: 1200px; /* 바둑판 높이 1200px로 확장 */
+        width: 1200px;
+        height: 1200px;
         background-color: #f0d9b5;
         border: 2px solid black;
         display: grid;
