@@ -1,10 +1,14 @@
 <script>
-  import { board, moveHistoryStack, showMoveNumbers, placeStone, undoMove } from '../stores/goStore';
+  import { board, moveHistoryStack, showMoveNumbers, placeStone, undoMove, isTryModeActive, tryMoveHistoryStack, undoTryMove, tryHistory } from '../stores/goStore';
   import { starPoints } from '../constants';
 
   function handleUndo(event) {
-    event.preventDefault(); // 우클릭 시 기본 메뉴 방지
-    undoMove();
+    event.preventDefault();
+    if ($isTryModeActive) {
+      undoTryMove(); 
+    } else {
+      undoMove(); 
+    }
   }
 </script>
 
@@ -40,12 +44,21 @@
 
                 {#if $board[x + 1][y + 1] === 'black' || $board[x + 1][y + 1] === 'white'}
                     <div class="stone {$board[x + 1][y + 1]}">
-                        {#if $showMoveNumbers}
-                            <!-- 스택에서 가장 최근의 순서를 표시 -->
-                            {#if $moveHistoryStack[x + 1][y + 1].length > 0}
+                        {#if $isTryModeActive}
+                            {#if $tryHistory.find(h => h.x === x + 1 && h.y === y + 1 && h.isTryModeMove)}
+                                <!-- 놓아보기 모드에서 새롭게 착수된 수만 표시 -->
                                 <span class="move-number">
-                                    {$moveHistoryStack[x + 1][y + 1][$moveHistoryStack[x + 1][y + 1].length - 1]}
+                                    {$tryMoveHistoryStack[x + 1][y + 1][$tryMoveHistoryStack[x + 1][y + 1].length - 1]}
                                 </span>
+                            {/if}
+                        {:else}
+                            {#if $showMoveNumbers}
+                                <!-- 스택에서 가장 최근의 순서를 표시 -->
+                                {#if $moveHistoryStack[x + 1][y + 1].length > 0}
+                                    <span class="move-number">
+                                        {$moveHistoryStack[x + 1][y + 1][$moveHistoryStack[x + 1][y + 1].length - 1]}
+                                    </span>
+                                {/if}
                             {/if}
                         {/if}
                     </div>

@@ -3,7 +3,7 @@ import { writable, get } from 'svelte/store';
 // 바둑판 상태 초기화
 const boardSize = 21;
 const initialBoard = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
-const initialMoveHistoryStack = Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => []));  // 각 자리에 스택으로 순서 기록
+const initialMoveHistoryStack = Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => []));
 
 // 스토어 생성
 export const board = writable(initialBoard);
@@ -14,13 +14,19 @@ export const gMoveCount = writable(0);
 export const history = writable([]); 
 export const redoStack = writable([]); 
 export const showMoveNumbers = writable(true);
+
 export const kiboFiles = writable([]);
+export const isKiboLoaded = writable(false); 
+export const isTryModeActive = writable(false); 
+export const tryHistory = writable([]); 
+export const tryMoveHistoryStack = writable([]);
+export const tryMoveCount = writable(0);
+
 
 /** 착수 관련 로직 */
 
 function redrawBoard() {
     const currentHistory = get(history);
-    // 히스토리 데이터를 기반으로 바둑판을 다시 설정
     board.update(b => {
         // 보드 초기화
         for (let x = 0; x < boardSize; x++) {
@@ -38,39 +44,61 @@ function redrawBoard() {
 
 // 착수 함수
 export function placeStone(x, y) {
+    if (get(isKiboLoaded) && !get(isTryModeActive)) {
+        alert("놓아보기 모드를 활성화해야 착수할 수 있습니다.");
+        return;
+    }
+
     board.update(b => {
-        if (b[x][y] === null) {
-            // 현재 돌을 놓음
-            b[x][y] = get(currentStone);
-            
-            gMoveCount.update(n => n + 1);  // 순서 증가
-            
-            // 해당 자리에 스택에 순서 기록
-            moveHistoryStack.update(mhs => {
-                mhs[x][y].push(get(gMoveCount));
-                return mhs;
-            });
-            
-            const capturedStones = checkCaptured(x, y, b);  // 사석 체크
+        if (get(isTryModeActive)) {
+            if (b[x][y] === null) {
+                b[x][y] = get(currentStone);
 
-            // 히스토리에 돌의 위치, 색상, 사석 기록
-            history.update(h => [...h, { x, y, stone: get(currentStone), capturedStones, moveCount: get(gMoveCount) }]);
+                const moveCount = get(tryMoveCount) + 1;
+                const capturedStones = checkCaptured(x, y, b);
 
-            // 앞으로 가기 스택을 비움
-            redoStack.set([]);
+                tryHistory.update(th => [
+                    ...th, 
+                    { x, y, stone: get(currentStone), capturedStones, moveCount, isTryModeMove: true }
+                ]);
 
-            // 다음 차례로 돌 교체
-            if (get(currentMode) === 'alternate') {
+                tryMoveHistoryStack.update(mhs => {
+                    mhs[x][y].push(moveCount);
+                    return mhs;
+                });
+
+                tryMoveCount.set(moveCount);
+
                 currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
             }
         } else {
-            // 이미 돌이 놓인 자리에 다시 클릭하면 돌을 제거
-            b[x][y] = null;
-            moveHistoryStack.update(mhs => {
-                mhs[x][y].pop();  // 스택에서 제거
-                return mhs;
-            });
-        }
+            if (b[x][y] === null) {
+                b[x][y] = get(currentStone);
+                
+                gMoveCount.update(n => n + 1);
+
+                moveHistoryStack.update(mhs => {
+                    mhs[x][y].push(get(gMoveCount));
+                    return mhs;
+                });
+                
+                const capturedStones = checkCaptured(x, y, b); 
+                history.update(h => [...h, { x, y, stone: get(currentStone), capturedStones, moveCount: get(gMoveCount) }]);
+    
+                redoStack.set([]);
+
+                if (get(currentMode) === 'alternate') {
+                    currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
+                }
+            } else {
+                // 이미 돌이 놓인 자리에 다시 클릭하면 돌을 제거
+                b[x][y] = null;
+                moveHistoryStack.update(mhs => {
+                    mhs[x][y].pop(); 
+                    return mhs;
+                });
+            }
+        }        
         return b;
     });
 }
@@ -85,24 +113,22 @@ function checkCaptured(x, y, board) {
         { dx: 0, dy: 1 }    // 오른쪽
     ];
 
-    const capturedStones = [];  // 포위된 돌들
+    const capturedStones = [];  
 
-    // 상하좌우에 있는 상대방 돌을 확인
     for (let { dx, dy } of directions) {
         const newX = x + dx;
         const newY = y + dy;
 
-        // 보드 경계 안에 있고 상대방 돌이 있는 경우
         if (newX > 0 && newX < boardSize && newY > 0 && newY < boardSize && board[newX][newY] === opponent) {
-            const group = findGroup(newX, newY, opponent, board);  // 그룹을 찾음
+            const group = findGroup(newX, newY, opponent, board); 
             if (isSurrounded(group, board)) {
-                capturedStones.push(...group);  // 포위된 그룹을 기록
-                removeGroup(group, board);  // 그룹 제거
+                capturedStones.push(...group); 
+                removeGroup(group, board);
             }
         }
     }
 
-    return capturedStones;  // 포위된 돌 그룹 반환
+    return capturedStones;
 }
 
 // 그룹을 찾는 함수 (재귀적으로 연결된 같은 색 돌을 찾음)
@@ -112,10 +138,10 @@ function findGroup(x, y, stoneType, board, visited = new Set()) {
     visited.add(`${x},${y}`);
 
     const directions = [
-        { dx: -1, dy: 0 },  // 위쪽
-        { dx: 1, dy: 0 },   // 아래쪽
-        { dx: 0, dy: -1 },  // 왼쪽
-        { dx: 0, dy: 1 }    // 오른쪽
+        { dx: -1, dy: 0 }, 
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 }
     ];
 
     while (stack.length > 0) {
@@ -140,10 +166,10 @@ function findGroup(x, y, stoneType, board, visited = new Set()) {
 // 그룹이 포위되었는지 확인하는 함수
 function isSurrounded(group, board) {
     const directions = [
-        { dx: -1, dy: 0 },  // 위쪽
-        { dx: 1, dy: 0 },   // 아래쪽
-        { dx: 0, dy: -1 },  // 왼쪽
-        { dx: 0, dy: 1 }    // 오른쪽
+        { dx: -1, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 }
     ];
 
     for (let { x, y } of group) {
@@ -183,8 +209,8 @@ function removeGroup(group, board) {
 // 되돌리기
 export function undoMove() {
     if (get(history).length > 0) {
-        const lastMove = get(history).pop();  // 마지막 수를 히스토리에서 제거
-        redoStack.update(r => [lastMove, ...r]); // redoStack에 맨 앞에 추가
+        const lastMove = get(history).pop();
+        redoStack.update(r => [lastMove, ...r]);
         const { x, y, capturedStones } = lastMove;
 
         board.update(b => {
@@ -213,7 +239,7 @@ export function undoMove() {
 // 앞으로 가기(되돌린 수 복원)
 export function redoMove() {
     if (get(redoStack).length > 0) {
-        const nextMove = get(redoStack).shift();  // redoStack의 첫 번째 수를 가져옴
+        const nextMove = get(redoStack).shift();
         const { x, y, stone, moveCount } = nextMove;
 
         board.update(b => {
@@ -232,7 +258,6 @@ export function redoMove() {
             return b;
         });
 
-        // 차례를 교체
         currentStone.set(stone === 'black' ? 'white' : 'black');
         gMoveCount.update(n => n + 1);
     }
@@ -242,33 +267,100 @@ export function redoMove() {
 export function goToStart() {
     const currentHistory = get(history);
     redoStack.update(r => [...currentHistory,...r]);
-    board.set(Array(boardSize).fill().map(() => Array(boardSize).fill(null))); // 바둑판을 초기화
+    board.set(Array(boardSize).fill().map(() => Array(boardSize).fill(null))); 
     moveHistoryStack.set(Array(boardSize).fill().map(() => Array(boardSize).fill().map(() => [])));
     gMoveCount.set(0);
-    history.set([]); // 히스토리를 비움
+    history.set([]); 
 }
 
 // 5수 뒤로 가는 함수
 export function goBackFiveMoves() {
-    let steps = Math.min(5, get(history).length);  // 최대 5수 또는 남아있는 수만큼만
+    let steps = Math.min(5, get(history).length); 
     for (let i = 0; i < steps; i++) {
-        undoMove();  // 기존 undoMove 함수를 호출하여 한 수씩 되돌림
+        undoMove(); 
     }
 }
 
 // 5수 앞으로 가는 함수
 export function goForwardFiveMoves() {
-    let steps = Math.min(5, get(redoStack).length);  // 최대 5수 또는 남아있는 redoStack만큼만
+    let steps = Math.min(5, get(redoStack).length); 
     for (let i = 0; i < steps; i++) {
-        redoMove();  // 기존 redoMove 함수를 호출하여 한 수씩 진행
+        redoMove(); 
     }
 }
 
 // 마지막 수로 이동하는 함수
 export function goToEnd() {
     while (get(redoStack).length > 0) {
-        redoMove();  // redoStack이 빌 때까지 앞으로 이동
+        redoMove(); 
     }
+}
+
+
+export function undoTryMove() {
+    if (get(isTryModeActive) && get(tryHistory).length > 0) {
+        const lastMove = get(tryHistory).pop();
+        board.update(b => {
+            b[lastMove.x][lastMove.y] = null;
+            return b;
+        });
+
+        tryMoveHistoryStack.update(mhs => {
+            mhs[lastMove.x][lastMove.y].pop();
+            return mhs;
+        });
+
+        // 사석 복구
+        lastMove.capturedStones.forEach(({ x: capturedX, y: capturedY, stone }) => {
+            board.update(b => {
+                b[capturedX][capturedY] = stone; 
+                return b;
+            });
+        });
+
+        tryMoveCount.update(n => n - 1);
+    } else {
+        alert("더 이상 되돌릴 수 없습니다.");
+    }
+}
+
+  export function toggleTryMode() {
+    isTryModeActive.update(value => !value);
+    if (get(isTryModeActive)) {
+        startTryMode();
+    } else {
+        stopTryMode();
+    }
+  }
+
+  export function startTryMode() {
+    tryHistory.set([]);
+    tryMoveHistoryStack.set(get(moveHistoryStack));
+    isTryModeActive.set(true);
+    tryMoveCount.set(0);
+  }
+
+  export function stopTryMode() {
+    isTryModeActive.set(false);
+    tryHistory.set([]);
+    tryMoveHistoryStack.set([]);
+    tryMoveCount.set(0);
+
+    board.update(b => {
+        for (let i = 0; i < boardSize; i++) {
+            for (let j = 0; j < boardSize; j++) {
+                b[i][j] = null;
+            }
+        }
+
+        get(history).forEach(move => {
+            b[move.x][move.y] = move.stone;
+        });
+
+        return b;
+    });
+
+    gMoveCount.set(get(history).length);
 }
 
 
@@ -281,7 +373,13 @@ export function resetBoard() {
     gMoveCount.set(0);
     history.set([]);
     redoStack.set([]);
+    isKiboLoaded.set(false);
+    isTryModeActive.set(false);
+    tryHistory.set([]);
+    tryMoveCount.set(0);
     currentStone.set('black');
+
+    redrawBoard();
 }
 
 // 숫자 표시 여부를 토글하는 함수
@@ -357,6 +455,9 @@ function applyKiboData(kibo) {
     history.set(kibo.history || []);
     moveHistoryStack.set(kibo.moveHistoryStack || initialMoveHistoryStack);
     gMoveCount.set(kibo.moveCount || 0);
+    isKiboLoaded.set(true);
+    isTryModeActive.set(false);
+    tryHistory.set([]);
 
     restoreFromKiboData();
 }
