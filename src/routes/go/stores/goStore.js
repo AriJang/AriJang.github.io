@@ -49,59 +49,60 @@ export function placeStone(x, y) {
         return;
     }
 
-    board.update(b => {
-        if (get(isTryModeActive)) {
-            if (b[x][y] === null) {
-                b[x][y] = get(currentStone);
-
-                const moveCount = get(tryMoveCount) + 1;
-                const capturedStones = checkCaptured(x, y, b);
-
-                tryHistory.update(th => [
-                    ...th, 
-                    { x, y, stone: get(currentStone), capturedStones, moveCount, isTryModeMove: true }
-                ]);
-
-                tryMoveHistoryStack.update(mhs => {
-                    mhs[x][y].push(moveCount);
-                    return mhs;
-                });
-
-                tryMoveCount.set(moveCount);
-
-                currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
-            }
-        } else {
-            if (b[x][y] === null) {
-                b[x][y] = get(currentStone);
-                
-                gMoveCount.update(n => n + 1);
-
-                moveHistoryStack.update(mhs => {
-                    mhs[x][y].push(get(gMoveCount));
-                    return mhs;
-                });
-                
-                const capturedStones = checkCaptured(x, y, b); 
-                history.update(h => [...h, { x, y, stone: get(currentStone), capturedStones, moveCount: get(gMoveCount) }]);
-    
-                redoStack.set([]);
-
-                if (get(currentMode) === 'alternate') {
-                    currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
-                }
-            } else {
-                // 이미 돌이 놓인 자리에 다시 클릭하면 돌을 제거
-                b[x][y] = null;
-                moveHistoryStack.update(mhs => {
-                    mhs[x][y].pop(); 
-                    return mhs;
-                });
-            }
-        }        
-        return b;
-    });
+    placeStoneCommon(x, y, get(isTryModeActive));
 }
+
+// 공통된 돌 놓기 로직을 함수로 분리
+function placeStoneCommon(x, y, isTryMode) {
+    const currentHistory = isTryMode ? tryHistory : history;
+    const currentMoveCount = isTryMode ? tryMoveCount : gMoveCount;
+    const currentMoveHistoryStack = isTryMode ? tryMoveHistoryStack : moveHistoryStack;
+
+    board.update(b => {
+        if (b[x][y] === null) {            
+            b[x][y] = get(currentStone);
+            currentMoveCount.update(n => n + 1);
+
+            currentMoveHistoryStack.update(mhs => {
+                if (!mhs[x]) mhs[x] = [];
+                if (!mhs[x][y]) mhs[x][y] = [];
+                mhs[x][y].push(get(currentMoveCount));
+                return mhs;
+            });
+
+            const capturedStones = checkCaptured(x, y, b);
+
+            currentHistory.update(h => [
+                ...h, 
+                { x, y, stone: get(currentStone), capturedStones, moveCount: get(currentMoveCount), isTryModeMove: isTryMode }
+            ]);
+
+            const myGroup = findGroup(x, y, get(currentStone), b);
+            if (isSurrounded(myGroup, b)) {
+                alert("착수 금지!");
+                b[x][y] = null;
+                currentMoveCount.update(n => n - 1);
+                currentMoveHistoryStack.update(mhs => {
+                    mhs[x][y].pop();
+                    return mhs;
+                });
+                get(currentHistory).pop();
+                return b;
+            }
+            if(!isTryMode) {
+                redoStack.set([]);
+            }
+
+            return b;
+        }
+    });
+
+    if (get(currentMode) === 'alternate') {
+        currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
+    }
+}
+
+
 
 // 포위된 돌(사석)이 있는지 확인하는 함수
 function checkCaptured(x, y, board) {
