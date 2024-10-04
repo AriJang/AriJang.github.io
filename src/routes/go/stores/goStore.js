@@ -93,13 +93,14 @@ function placeStoneCommon(x, y, isTryMode) {
                 redoStack.set([]);
             }
 
+            if (get(currentMode) === 'alternate') {
+                currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
+            }
+
             return b;
         }
     });
-
-    if (get(currentMode) === 'alternate') {
-        currentStone.set(get(currentStone) === 'black' ? 'white' : 'black');
-    }
+    
 }
 
 
