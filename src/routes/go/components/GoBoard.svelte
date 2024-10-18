@@ -1,6 +1,37 @@
 <script>
   import { board, moveHistoryStack, showMoveNumbers, placeStone, undoMove, isTryModeActive, tryMoveHistoryStack, undoTryMove, tryHistory } from '../stores/goStore';
   import { starPoints } from '../constants';
+  import { onMount } from 'svelte';
+
+  let boardSize = 1200; // 기본 셀 크기 (px 단위)
+  let cellSize = boardSize / 18;
+
+  onMount(() => {
+    // 미디어 쿼리를 사용하여 화면 크기에 따른 반응형 처리
+    const smallScreenQuery = window.matchMedia('(max-width: 830px), (max-height: 900px)');
+    const mediumScreenQuery = window.matchMedia('(max-width: 1250px), (max-height: 1300px)');
+
+    function updateCellSize() {
+        if (smallScreenQuery.matches) {
+            console.log('GoBoard small boardSize = 600');
+            boardSize = 600;
+        } else if (mediumScreenQuery.matches) {
+            console.log('GoBoard medium boardSize = 800');
+            boardSize = 800;
+        } else {
+            console.log('GoBoard large boardSize = 1200');
+            boardSize = 1200;
+        }
+        cellSize = boardSize / 18;
+        console.log('cellSize = ', cellSize);
+    }
+    
+
+    // 미디어 쿼리 상태에 따라 셀 크기 업데이트
+    updateCellSize();
+    smallScreenQuery.addEventListener('change', updateCellSize);
+    mediumScreenQuery.addEventListener('change', updateCellSize);
+  });
 
   function handleUndo(event) {
     event.preventDefault();
@@ -15,10 +46,10 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="board" on:contextmenu={handleUndo}>
     {#each Array(19) as _, index}
-        <div class="line horizontal" style="top: {index * (1200 / 18)}px"></div>
+        <div class="line horizontal" style="top: {index * cellSize}px"></div>
     {/each}
     {#each Array(19) as _, index}
-        <div class="line vertical" style="left: {index * (1200 / 18)}px"></div>
+        <div class="line vertical" style="left: {index * cellSize}px"></div>
     {/each}
     {#each $board.slice(1, 20) as row, x}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -26,10 +57,10 @@
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="cell" 
-                 style="top: {x * (1200 / 18) - 25}px; left: {y * (1200 / 18) - 25}px;" 
-                 on:click={() => {placeStone(x + 1, y + 1);}}
-                 on:keydown={(e) => { if (e.key === 'Enter') placeStone(x + 1, y + 1); }}
-                 role="button" tabindex="0">
+                style="top: {x * cellSize - cellSize / 2}px; left: {y * cellSize - cellSize / 2}px;" 
+                on:click={() => {placeStone(x + 1, y + 1);}}
+                on:keydown={(e) => { if (e.key === 'Enter') placeStone(x + 1, y + 1); }}
+                role="button" tabindex="0">
                 {#if starPoints.some(point => point.x === x + 1 && point.y === y + 1)}
                     <div class="star-point"></div>
                 {/if}
@@ -105,13 +136,12 @@
 
     .star-point {
         position: absolute;
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
         background-color: black;
         border-radius: 50%;
-        top: 53%;
-        left: 53%;
-        transform: translate(-50%, -50%);
+        top: 55%;
+        left: 55%;
     }
 
     .stone {
@@ -119,9 +149,8 @@
         width: 55px;
         height: 55px;
         border-radius: 50%;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        top: 10%;
+        left: 10%;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -145,6 +174,54 @@
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+
+    @media screen and (max-width: 1250px), screen and (max-height: 1300px) {
+        .board {
+            width: 800px;
+            height: 800px;
+        }
+
+        .cell {
+            width: 42px;
+            height: 42px;
+        }
+
+        .stone {
+            width: 38px;
+            height: 38px;
+        }
+
+        .star-point {
+            width: 12px;
+            height: 12px;
+            top: 40%;
+            left: 40%;
+        }
+    }
+
+    @media screen and (max-width: 830px), screen and (max-height: 900px) {
+        .board {
+            width: 600px;
+            height: 600px;
+        }
+
+        .cell {
+            width: 32px;
+            height: 32px;
+        }
+
+        .stone {
+            width: 28px;
+            height: 28px;
+        }
+
+        .star-point {
+            width: 10px;
+            height: 10px;
+            top: 40%;
+            left: 40%;
+        }
     }
 
 </style>
