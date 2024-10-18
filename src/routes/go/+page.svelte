@@ -26,7 +26,7 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #f0f0f0;
+        background-color: #bcb3b3;
     }
 
     .board-side-container {
@@ -40,7 +40,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        flex: 0 0 1200px;
+        width: 1400px;
+        height: 1400px;
         margin-right: 20px;
     }
 
@@ -48,8 +49,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 10px;
-        margin-top: 20px;
+        gap: 20px;
+        margin-top: 50px;
         width: 100%; 
     }
 
@@ -58,7 +59,8 @@
             flex-direction: column; 
         }
         .board-container {
-            flex: 0 0 800px; 
+            width: 900px;
+            height: 900px;
             margin-right: 0;
             margin-bottom: 20px;
         }
@@ -72,7 +74,10 @@
         }
 
         .board-container {
-            flex: 0 0 600px; 
+            width: 700px;
+            height: 700px;
+            margin-right: 0;
+            margin-bottom: 10px;
         }
 
         .media-buttons-container {
