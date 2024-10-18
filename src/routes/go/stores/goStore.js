@@ -13,7 +13,7 @@ export const moveHistoryStack = writable(initialMoveHistoryStack);
 export const gMoveCount = writable(0); 
 export const history = writable([]); 
 export const redoStack = writable([]); 
-export const showMoveNumbers = writable(true);
+export const showMoveNumbers = writable(false);
 
 export const kiboFiles = writable([]);
 export const isKiboLoaded = writable(false); 

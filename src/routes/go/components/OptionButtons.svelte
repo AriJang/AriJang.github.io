@@ -1,6 +1,6 @@
 <script>
   import { currentMode, toggleMoveNumbers, setWhiteMode, setBlackMode, setAlternateMode, showMoveNumbers, 
-            resetBoard, saveKibo,  kiboFiles, loadKiboFromLocal, loadKiboFromAssets } from '../stores/goStore';
+            saveKibo,  kiboFiles, loadKiboFromLocal, loadKiboFromAssets } from '../stores/goStore';
 </script>
 
 <div class="controls-side">
@@ -10,7 +10,6 @@
     <button class="button number-button" on:click={toggleMoveNumbers}>
         {#if $showMoveNumbers} 순서숨기기 {:else} 순서보이기 {/if}
     </button>
-    <button class="button number-button" on:click={resetBoard} style="background-color: red;">리셋</button>
     <div class="kibo-container">
         <button class="kibo-button save" on:click={saveKibo}>기보 저장</button>
         

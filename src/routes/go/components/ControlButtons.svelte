@@ -1,5 +1,5 @@
 <script>
-import { goToStart, goBackFiveMoves, undoMove, redoMove, goForwardFiveMoves, goToEnd, toggleTryMode, isTryModeActive, isKiboLoaded, undoTryMove } from '../stores/goStore';
+import { goToStart, goBackFiveMoves, undoMove, redoMove, goForwardFiveMoves, goToEnd, toggleTryMode, isTryModeActive, isKiboLoaded, undoTryMove, resetBoard } from '../stores/goStore';
 
 function handleUndo(event) {
     event.preventDefault(); 
@@ -25,6 +25,7 @@ function handleUndo(event) {
     <button class="button" on:click={redoMove} disabled={$isTryModeActive}>한 수 앞으로</button>
     <button class="button" on:click={goForwardFiveMoves} disabled={$isTryModeActive}>5수 앞으로</button>
     <button class="button" on:click={goToEnd} disabled={$isTryModeActive}>마지막으로</button>
+    <button class="button" on:click={resetBoard} style="background-color: red;">리셋</button>
 </div>
 
 <style>

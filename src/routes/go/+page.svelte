@@ -7,11 +7,14 @@
 
     onMount(async () => {
         console.log('import.meta.env.DEV = ' , import.meta.env.DEV);
+
         if (import.meta.env.DEV) { // 동적 빌드일 때만 API 호출
             fetchKiboFilesOnRuntime();
         } else { // 정적 빌드
             fetchKiboFilesFromBuild();
-        }       
+        }
+
+        
     });
 
 </script>
@@ -37,7 +40,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        flex: 0 0 800px;
+        flex: 0 0 1200px;
         margin-right: 20px;
     }
 
@@ -49,6 +52,35 @@
         margin-top: 20px;
         width: 100%; 
     }
+
+    @media screen and (max-width: 1250px), screen and (max-height: 1300px) {
+        .container {
+            flex-direction: column; 
+        }
+        .board-container {
+            flex: 0 0 800px; 
+            margin-right: 0;
+            margin-bottom: 20px;
+        }
+    }
+
+    @media screen and (max-width: 830px), screen and (max-height: 900px) {
+        .container {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 10px;
+        }
+
+        .board-container {
+            flex: 0 0 600px; 
+        }
+
+        .media-buttons-container {
+            gap: 5px;
+            margin-top: 10px;
+    }
+
+}
 </style>
 
 <div class="container">
@@ -64,7 +96,4 @@
         <ControlButtons />
       </div>
     </div>
-  
-    <!-- 바둑판 오른쪽에 위치할 옵션 버튼 그룹 -->
-    <OptionButtons />
 </div>
