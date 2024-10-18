@@ -20,6 +20,7 @@
 </script>
   
 <style>
+    
     .container {
         display: flex;
         flex-direction: row;
@@ -35,6 +36,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        width: 100%;
     }
 
     .board-container {
