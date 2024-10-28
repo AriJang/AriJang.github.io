@@ -20,12 +20,14 @@
 </script>
   
 <style>
+    
     .container {
         display: flex;
         flex-direction: row;
         justify-content: center;
         align-items: center;
         height: 100vh;
+        width: 100vw;
         background-color: #bcb3b3;
     }
 
@@ -34,6 +36,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        width: 100%;
     }
 
     .board-container {
