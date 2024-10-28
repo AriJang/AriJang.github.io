@@ -59,6 +59,9 @@ function placeStoneCommon(x, y, isTryMode) {
     const currentMoveHistoryStack = isTryMode ? tryMoveHistoryStack : moveHistoryStack;
 
     board.update(b => {
+        if (b[x][y] !== null){
+            return b;
+        } 
         if (b[x][y] === null) {            
             b[x][y] = get(currentStone);
             currentMoveCount.update(n => n + 1);
