@@ -61,9 +61,6 @@
     }
 
     @media screen and (max-width: 1250px), screen and (max-height: 1300px) {
-        .container {
-            flex-direction: row; 
-        }
         .board-container {
             width: 900px;
             height: 900px;
@@ -74,7 +71,6 @@
 
     @media screen and (max-width: 830px), screen and (max-height: 900px) {
         .container {
-            flex-direction: column;
             align-items: flex-start;
             padding: 10px;
         }
