@@ -24,11 +24,13 @@
     .container {
         display: flex;
         flex-direction: row;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         height: 100vh;
         width: 100vw;
         background-color: #bcb3b3;
+        gap: 20px;
+        padding: 0 20px;  /* 좌우 여백 추가 */
     }
 
     .board-side-container {
@@ -36,7 +38,8 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        width: 100%;
+        flex-shrink: 0;  /* 컨테이너가 축소되지 않도록 설정 */
+        width: fit-content;  /* 컨텐츠 크기만큼만 너비 차지 */
     }
 
     .board-container {
@@ -59,7 +62,7 @@
 
     @media screen and (max-width: 1250px), screen and (max-height: 1300px) {
         .container {
-            flex-direction: column; 
+            flex-direction: row; 
         }
         .board-container {
             width: 900px;
@@ -104,4 +107,7 @@
         <ControlButtons />
       </div>
     </div>
+
+    <!-- 바둑판 오른쪽에 위치할 옵션 버튼 그룹 -->
+    <OptionButtons />
 </div>
