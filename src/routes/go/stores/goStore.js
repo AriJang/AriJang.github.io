@@ -60,6 +60,13 @@ function placeStoneCommon(x, y, isTryMode) {
 
     board.update(b => {
         if (b[x][y] !== null){
+            // 이미 돌이 놓인 자리에 다시 클릭하면 돌을 제거
+            b[x][y] = null;
+            moveHistoryStack.update(mhs => {
+                mhs[x][y].pop(); 
+                return mhs;
+            });
+            
             return b;
         } 
         if (b[x][y] === null) {            
