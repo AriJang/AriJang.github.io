@@ -3,10 +3,8 @@
   import { starPoints } from '../constants';
   import { onMount } from 'svelte';
 
-  let boardSizeX = 1200;
-  let boardSizeY = 1400 
-  let cellXSize = boardSizeX / 18;
-  let cellYSize = boardSizeY / 18;
+  let boardSize = 1200; // 기본 셀 크기 (px 단위)
+  let cellSize = boardSize / 18;
 
   onMount(() => {
     // 미디어 쿼리를 사용하여 화면 크기에 따른 반응형 처리
@@ -16,21 +14,16 @@
     function updateCellSize() {
         if (smallScreenQuery.matches) {
             console.log('GoBoard small boardSize = 600');
-            boardSizeX = 600;
-            boardSizeY = 680;
+            boardSize = 600;
         } else if (mediumScreenQuery.matches) {
             console.log('GoBoard medium boardSize = 800');
-            boardSizeX = 800;
-            boardSizeY = 900;
+            boardSize = 800;
         } else {
             console.log('GoBoard large boardSize = 1200');
-            boardSizeX = 1200;
-            boardSizeY = 1400;
+            boardSize = 1200;
         }
-        cellXSize = boardSizeX / 18;
-        cellYSize = boardSizeY / 18;
-        console.log('cellXSize = ', cellXSize);
-        console.log('cellYSize = ', cellYSize);
+        cellSize = boardSize / 18;
+        console.log('cellSize = ', cellSize);
     }
     
 
@@ -53,10 +46,10 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="board" on:contextmenu={handleUndo}>
     {#each Array(19) as _, index}
-        <div class="line horizontal" style="top: {index * cellYSize}px"></div>
+        <div class="line horizontal" style="top: {index * cellSize}px"></div>
     {/each}
     {#each Array(19) as _, index}
-        <div class="line vertical" style="left: {index * cellXSize}px"></div>
+        <div class="line vertical" style="left: {index * cellSize}px"></div>
     {/each}
     {#each $board.slice(1, 20) as row, x}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -64,7 +57,7 @@
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="cell" 
-                style="top: {x * cellYSize - cellYSize / 2}px; left: {y * cellXSize - cellXSize / 2}px;" 
+                style="top: {x * cellSize - cellSize / 2}px; left: {y * cellSize - cellSize / 2}px;" 
                 on:click={() => {placeStone(x + 1, y + 1);}}
                 on:keydown={(e) => { if (e.key === 'Enter') placeStone(x + 1, y + 1); }}
                 role="button" tabindex="0">
@@ -109,8 +102,8 @@
 <style>
     .board {
         position: relative;
-        width: 1202px;
-        height: 1398px;
+        width: 1200px;
+        height: 1200px;
         background-color: #f0d9b5;
         border: 2px solid black;
         display: grid;
@@ -126,19 +119,19 @@
     }
 
     .horizontal {
-        height: 2px;
+        height: 1px;
         width: 100%;
     }
 
     .vertical {
-        width: 2px;
+        width: 1px;
         height: 100%;
     }
 
     .cell {
         position: absolute;
-        width: 67px;
-        height: 77px;
+        width: 47px;
+        height: 47px;
     }
 
     .star-point {
@@ -147,16 +140,16 @@
         height: 16px;
         background-color: black;
         border-radius: 50%;
-        top: 42%;
-        left: 39%;
+        top: 55%;
+        left: 55%;
     }
 
     .stone {
         position: absolute;
-        width: 57px;
-        height: 57px;
+        width: 55px;
+        height: 55px;
         border-radius: 50%;
-        top: 12%;
+        top: 10%;
         left: 10%;
         display: flex;
         justify-content: center;
@@ -185,18 +178,18 @@
 
     @media screen and (max-width: 1250px), screen and (max-height: 1300px) {
         .board {
-            width: 801px;
-            height: 902px;
+            width: 800px;
+            height: 800px;
         }
 
         .cell {
-            width: 44px;
-            height: 50px;
+            width: 42px;
+            height: 42px;
         }
 
         .stone {
             width: 38px;
-            height: 40px;
+            height: 38px;
         }
 
         .star-point {
@@ -209,18 +202,18 @@
 
     @media screen and (max-width: 830px), screen and (max-height: 900px) {
         .board {
-            width: 602px;
-            height: 682px;
+            width: 600px;
+            height: 600px;
         }
 
         .cell {
-            width: 33px;
-            height: 37px;
+            width: 32px;
+            height: 32px;
         }
 
         .stone {
             width: 28px;
-            height: 29px;
+            height: 28px;
         }
 
         .star-point {
