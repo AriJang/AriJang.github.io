@@ -46,8 +46,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 1400px;
-        height: 1400px;
+        flex: 0 0 1200px;
         margin-right: 20px;
     }
 
@@ -55,15 +54,14 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 20px;
-        margin-top: 50px;
+        gap: 10px;
+        margin-top: 20px;
         width: 100%; 
     }
 
     @media screen and (max-width: 1250px), screen and (max-height: 1300px) {
         .board-container {
-            width: 900px;
-            height: 900px;
+            flex: 0 0 800px; 
             margin-right: 0;
             margin-bottom: 20px;
         }
@@ -76,10 +74,7 @@
         }
 
         .board-container {
-            width: 700px;
-            height: 700px;
-            margin-right: 0;
-            margin-bottom: 10px;
+            flex: 0 0 600px; 
         }
 
         .media-buttons-container {
